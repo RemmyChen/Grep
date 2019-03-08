@@ -1,0 +1,211 @@
+COMP 15 Project 2 Gerp - It's Like grep But Something Is Off
+Remmy Chen
+
+
+PROGRAM PURPOSE:
+
+The purpose of this program is to implement a search command, 
+similar to the Unix "grep" program, by indexing and searching 
+a file tree for words. This may be done by using a hash table 
+to store the words and the words' information.
+
+
+ACKNOWLEDGEMENTS:
+Previous hw and labs have been of help, particularly lab11 
+(FunkeyTable) which demonstrates how a hash table is implemented. 
+Class lectures and TA sessions during which we went over our 
+implementation plan have been significantly useful.
+
+Many thanks to the helpful questions and comments in the COMP15 
+piazza forum, which helped make me aware of considerations and 
+potential problems that could arise throughout the assignment. 
+Special, special, special thanks to the wonderful TAs for 
+guiding me through questions that I encountered along the way, 
+especially with helping me figure out where my nested structs of 
+pointers vectors were at, how I could avoid repetition without 
+looping through all stored data, and why memory was leaking. Also 
+big thanks to my peers for the camaraderie through stressful 
+late nights. Lastly, a big thank you to Professor Sheldon, who 
+is in charge of many of the resources available to me and who is 
+teaching me to be a better programmer, for design advice. 
+
+
+FINAL FILES USED/PROVIDED:
+
+DirNode.o (given) - contains object file of DirNode, directory
+nodes that make up the n-ery file tree. Primary purpose is to 
+provide information about the directories and files of a directory
+node.
+
+DirNode.h (given) - contains class interface of DirNode. Primary
+purpose is to let me (client) know what's in DirNode.o and how 
+to use it.
+
+FSTree.o (given) - contains object file of FSTree, an n-ery tree
+that represents the file system. Primary purpose is to build the
+n-ery tree.
+
+FSTree.h (given) - contains class interface of FSTree. Primary
+purpose is to let me (client) know what's in FSTree.o and how 
+to use it.
+
+FileStorage.cpp - contains class implementation of FileStorage.
+Purpose is to store strings (filepath and line information) of
+all the files in a given directory non-repetitively and to
+retrieve and print the strings when given a file number and a
+line number.
+
+FileStorage.h - contains class interface of FileStorage. 
+Purpose is to speed up compilation time, keep code organized, 
+and separate interface from implementation by being separate 
+from the .cpp file.
+
+HashTable.cpp - contains class implementation of HashTable. Purpose 
+is to index words of files by storing information (word, file 
+number, and line number) of the same word (all its uppercase or 
+lowercase instances) into the same slot for all words in all files 
+of a given directory, and print query results by retrieving the 
+word's information.
+
+HashTable.h - contains class interface of HashTable. Purpose is 
+to speed up compilation time, keep code organized, and separate 
+interface from implementation by being separate from the .cpp file.
+
+Gerp.cpp - contains class implementation of Gerp. Purpose is to
+climb the file tree, open each file up, retrieve each word's
+information, send each word's information to the hash table for
+indexing, take queries, and call for search.
+
+Gerp.h - contains class interface of Gerp. Purpose is to speed 
+up compilation time, keep code organized, and separate interface 
+from implementation by being separate from the .cpp file.
+
+main.cpp - the final executable, used to run Gerp. 
+
+testHashTable.cpp - used to test the first version of HashTable.cpp 
+(contained repetitions when storing data).
+
+Makefile - compiles C++ (.cpp) files and header (.h) files into 
+object (.o) files and link the .o files together into one executable.
+
+README - provides information to anyone with or without CS
+background who wishes to understand what the program is about
+and how the program may be used.
+
+
+THINGS TO KNOW:
+
+To compile, in the terminal, type: 
+"make".
+
+To run the program, in the terminal, type:
+"./gerp DirectoryToIndex" 
+
+where DirectoryToIndex is the name of the directory to be 
+traversed and indexed.
+
+To check for memory leaks, in the terminal, type:
+"valgrind --leak-check=full -v ./gerp DirectoryToIneex" 
+
+where DirectoryToIndex is the name of the directory to be 
+traversed and indexed.
+
+To check time and space usage, in the terminal, type: 
+"echo "@q" | /usr/bin/time -v ./gerp DirectoryToIndex" 
+
+where DirectoryToIndex is the name of the directory to be 
+traversed and indexed. "Elapsed (wall clock) time 
+(h:mm:ss or m:ss)" is the duration that it took to index 
+the directory. "Maximum resident set size (kbytes)" is 
+the peak memory usage of the program.
+
+The ultimate tests:
+valgrind --leak-check=full -v ./gerp /comp/15/files/proj2tests/largeGutenberg
+echo "@q" | /usr/bin/time -v ./gerp /comp/15/files/proj2tests/largeGutenberg
+
+
+ARCHITECTURAL OVERVIEW:
+
+FileStorage.cpp and FileStorage.h contain a vector of File 
+structs, with each File struct containing the file number,
+the file path, and a vector of Line structs, with each Line
+struct containing the line of the text and the line number.
+Every line of every file of a given directory gets stored
+a single time in FileStorage, so the data being stored is
+quite lean!
+
+HashTable.cpp and HashTable.h contain a sequence of TableEntry
+structs, with each TableEntry struct containing a boolean for
+whether entry is empty, a key, and a valuetype, the valuetype
+being a pointer to a vector of WordInfo structs, with each
+WordInfo struct containing the case-sensitive word, the file
+number and the line number. This keeps the hash table light
+and anytime query results need to be printed, can just go to
+entry, get file number and line number, and use FileStorage
+to retrieve and print.
+
+Gerp.cpp and Gerp.h contain functions that climb the file 
+system tree, indexes each word, catches and passes the word's 
+information to HashTable, and takes query orders. 
+
+Main.cpp contains the final executable and calls Gerp to run
+the program.
+
+
+DATA STRUCTURES & ALGORITHMS USED:
+
+The main data structures used in this program are the file 
+storage object (nested vectors/structs), hash table (array 
+of nested vectors/structs) and the file system tree (n-ery
+tree built by directory nodes and pointers). Because of space
+concerns with storing filepaths and document lines multiple
+times, I ended up separating these two out in my final 
+implementation. It was a good decision because previous 
+versions of my hash table were really complicated and messy. 
+In my implementation of the hash table, all instances (some 
+upper or lowercase rendition of the same word) of the same
+word are hashed to the same place. Collisions are avoided by
+moving one hash value over and checking to see if that
+table entry is empty. 
+
+In the final implementation of this program, indexing the 
+medium Gutenberg takes up 2618904 kbytes and 2:32.69 min.
+The large Gutenberg takes up 5876628 kbytes and 1:10.51 min.
+This differs time to time due to extraneous factors and 
+also very notably if my initial table size is 100000 then 
+a bad-alloc exception gets thrown probably because the 
+int can't hold what I was expanding to, whereas if my 
+initial table size is low, i.e. 3, then the int isn't as 
+likely to go out of bounds.
+
+Recursion is used when climbing the file system tree, else 
+not used and probably not good to use where memory is a 
+concern. 
+
+
+TESTING:
+
+Testing came in multiple phases. In the first week's submission 
+of FSTreeTraversal.cpp, I just built variations of test 
+directories and .txt files and used existing directories 
+containing known files to make sure that my program accessed 
+all files in all subdirectories of a given directory. In the 
+first week's submission of stringProcessing.cpp and 
+stringProcessing.h, I wrote a testStringProcessing.cpp and a 
+testString.txt file containing test cases to test. In the second 
+week's submission of the final gerp program, I wrote a 
+testHashTable.cpp to see if the first version of my hash table 
+(contained repetitions) was working, and then hooked everything 
+up and tested against the_gerp to make sure the outputs were 
+correct. I changed my implementation design twice so each time
+I ran on my test directories and .txt files to weed out minor 
+bugs. Valgrind and user/bin/time were critical - the former 
+because if there were memory issues of any kind, they get 
+exacerbated when running the program on large datasets, and
+the latter because it reflected design choices. Finally I ran 
+tests on space and time to compare my program's results and 
+the_gerp's results to see where optimization is necessary or 
+welcome. 
+
+
+
